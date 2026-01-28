@@ -131,11 +131,11 @@ const TeacherBatchLibrary: React.FC = () => {
 
   // --- LOGIC FOR "NEW" INDICATORS (BUBBLING) ---
   const isResourceUnread = (res: LibraryResource) => {
-    return res.isNew && !viewedResources.has(res.id);
+    return (res.isNew || res.is_new) && !viewedResources.has(res.id);
   };
 
   const isChapterUnread = (chapter: LibraryChapter) => {
-    if (chapter.isNew && !viewedChapters.has(chapter.id)) return true;
+    if ((chapter.isNew || chapter.is_new) && !viewedChapters.has(chapter.id)) return true;
     const resourcesInChapter = resources.filter(r => (r.chapterId || r.chapter_id) === chapter.id);
     return resourcesInChapter.some(r => isResourceUnread(r));
   };
@@ -250,50 +250,45 @@ const TeacherBatchLibrary: React.FC = () => {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeChapterId || !batchId || !activeSubjectId) {
-      showToast("Selection error", "error");
+      showToast("Selection error: Missing context", "error");
       return;
     }
+
+    if (!newFile.file || !newFile.title) {
+      showToast("Title and file are required", "error");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      let fileUrl = "https://pdfobject.com/pdf/sample.pdf"; // Default fallback
+      const formData = new FormData();
+      formData.append('file', newFile.file);
+      formData.append('batch_id', batchId);
+      formData.append('subject_id', activeSubjectId);
+      formData.append('chapter_id', activeChapterId);
+      formData.append('title', newFile.title);
+      formData.append('type', newFile.type);
 
-      if (newFile.file) {
-        // In a real app, we'd use api.resources.upload(formData)
-        // Here we'll simulate the upload for now but create the resource record
-        const formData = new FormData();
-        formData.append('file', newFile.file);
-        formData.append('batch_id', batchId);
-        formData.append('subject_id', activeSubjectId);
-        formData.append('chapter_id', activeChapterId);
-        formData.append('title', newFile.title);
-        formData.append('type', newFile.type);
+      // Consolidate into a single upload call
+      // The backend should create the resource record and return it
+      const created = await api.resources.upload(formData);
 
-        try {
-          const uploaded = await api.resources.upload(formData);
-          fileUrl = uploaded.url || fileUrl;
-        } catch (uploadErr) {
-          console.warn("Upload endpoint probably failed, using mock URL", uploadErr);
-        }
-      }
-
-      const payload = {
-        batch_id: batchId,
-        subject_id: activeSubjectId,
-        chapter_id: activeChapterId,
-        title: newFile.title,
-        type: newFile.type,
-        file_url: fileUrl,
-        is_new: true
+      // Normalize fields if backend returns snake_case
+      const normalizedResource = {
+        ...created,
+        id: created.id || created._id,
+        isNew: true, // Mark as new locally
+        uploadDate: new Date().toLocaleDateString()
       };
 
-      const created = await api.resources.create(payload);
-      setResources([created, ...resources]);
+      setResources(prev => [normalizedResource, ...prev]);
       setShowUploadModal(false);
       setNewFile({ title: '', type: 'NOTES', file: null });
       showToast("File uploaded successfully", "success");
-    } catch (err) {
-      showToast("Failed to upload", "error");
+    } catch (err: any) {
+      console.error("Upload failed:", err);
+      showToast(err.message || "Failed to upload file", "error");
     } finally {
       setIsSubmitting(false);
     }

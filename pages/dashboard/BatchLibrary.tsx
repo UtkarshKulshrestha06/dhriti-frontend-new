@@ -111,11 +111,11 @@ const BatchLibrary: React.FC = () => {
 
   // --- LOGIC FOR "NEW" INDICATORS ---
   const isResourceUnread = (res: LibraryResource) => {
-    return res.isNew && !viewedResources.has(res.id);
+    return (res.isNew || res.is_new) && !viewedResources.has(res.id);
   };
 
   const isChapterUnread = (chapter: LibraryChapter) => {
-    if (chapter.isNew && !viewedChapters.has(chapter.id)) return true;
+    if ((chapter.isNew || chapter.is_new) && !viewedChapters.has(chapter.id)) return true;
     const chapterId = chapter.id;
     const resourcesInChapter = allResources.filter(r => (r.chapterId || r.chapter_id) === chapterId);
     return resourcesInChapter.some(r => isResourceUnread(r));
@@ -244,8 +244,8 @@ const BatchLibrary: React.FC = () => {
                     key={sub.id}
                     onClick={() => { setActiveSubjectId(sub.id); setActiveChapterId(null); }}
                     className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all relative ${activeSubjectId === sub.id
-                        ? 'bg-slate-900 text-white shadow'
-                        : 'text-gray-500 hover:bg-gray-100'
+                      ? 'bg-slate-900 text-white shadow'
+                      : 'text-gray-500 hover:bg-gray-100'
                       }`}
                   >
                     {sub.name.slice(0, 4)}
@@ -270,8 +270,8 @@ const BatchLibrary: React.FC = () => {
                       key={chapter.id}
                       onClick={() => handleChapterClick(chapter.id)}
                       className={`w-full text-left px-3 py-3 rounded-xl text-sm font-bold flex items-center justify-between transition-all border relative ${activeChapterId === chapter.id
-                          ? 'bg-white shadow-sm text-ocean-700 border-ocean-100'
-                          : 'text-gray-500 border-transparent hover:bg-white hover:border-gray-200'
+                        ? 'bg-white shadow-sm text-ocean-700 border-ocean-100'
+                        : 'text-gray-500 border-transparent hover:bg-white hover:border-gray-200'
                         }`}
                     >
                       <span className="flex items-center gap-2 truncate pr-6">

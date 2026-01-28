@@ -143,6 +143,7 @@ export interface LibraryChapter {
   title: string;
   chapter_number?: number;
   chapterNumber?: number;
+  is_new?: boolean;
   isNew?: boolean;
 }
 
@@ -164,6 +165,7 @@ export interface LibraryResource {
   uploadDate?: string;
   url?: string;
   isNew?: boolean;
+  is_new?: boolean;
   subject?: string;
 }
 
