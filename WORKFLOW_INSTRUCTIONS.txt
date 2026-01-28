@@ -1,0 +1,45 @@
+
+Dhriti Classes Web Application - Workflow & User Guide
+
+1. USER ROLES
+----------------
+a) New Visitor: Unregistered users accessing public info.
+b) Student: Enrolled students with credentials (student@dhriti.com / password).
+
+2. WORKFLOW: NEW VISITOR
+-------------------------
+- Landing Page (/): View hero banners, latest news, why choose us, testimonials.
+- Courses (/courses): Browse available batches.
+- Resources (/resources): Access free PDFs and YouTube videos.
+- Contact (/contact): Enquiry form.
+
+3. WORKFLOW: STUDENT (LOGGED IN)
+---------------------------------
+Step 1: Login
+- Click "Student Login" in Navbar.
+- Enter credentials (dummy: student@dhriti.com / password).
+- On success, redirect to Dashboard.
+
+Step 2: Student Dashboard (/dashboard)
+- Displays "My Batches".
+- Shows only courses the student is subscribed to (Dummy user has JEE batches).
+- Click on a Batch Card to enter.
+
+Step 3: Batch Dashboard (/dashboard/batch/:id)
+- Shows specific details for that batch.
+- **Timetable**: Lists today's classes with faculty names.
+- **Notice Board**: Scrollable list of announcements.
+- **Access Library**: Button to view study materials.
+
+Step 4: Library (/dashboard/batch/:id/library)
+- **Subject Filter**: Tabs for Physics/Chemistry/Maths.
+- **Chapter List**: Sidebar listing chapters for the selected subject.
+- **Resources**: Main grid showing PDFs/Links.
+- **Type Filter**: Filter resources by Notes, DPP, or MindMaps.
+
+4. TECHNICAL NOTES
+-------------------
+- **Auth**: Managed via AuthContext (React Context API).
+- **Data**: Mock data located in constants.ts. To connect to backend, replace mock arrays with API calls.
+- **Protection**: Dashboard routes are protected; unauthorized access redirects to login.
+- **UI**: Uses Tailwind CSS with 'Ocean' blue theme.
