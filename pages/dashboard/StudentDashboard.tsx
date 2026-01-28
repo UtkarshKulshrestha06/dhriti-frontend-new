@@ -121,7 +121,7 @@ const StudentDashboard: React.FC = () => {
         setIsUploadingFreebie(true);
         try {
             const formData = new FormData();
-            formData.append('file', freebieFile);
+            formData.append('pdf', freebieFile);
             formData.append('title', freebieForm.title);
             formData.append('type', freebieForm.type);
             formData.append('subject', freebieForm.subject);

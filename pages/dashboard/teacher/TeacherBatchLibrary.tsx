@@ -263,7 +263,7 @@ const TeacherBatchLibrary: React.FC = () => {
 
     try {
       const formData = new FormData();
-      formData.append('file', newFile.file);
+      formData.append('pdf', newFile.file);
       formData.append('batch_id', batchId);
       formData.append('subject_id', activeSubjectId);
       formData.append('chapter_id', activeChapterId);
