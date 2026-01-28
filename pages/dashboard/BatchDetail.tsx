@@ -42,6 +42,11 @@ const BatchDetail: React.FC = () => {
                 }));
                 setAnnouncements(normalizedAnn);
                 setTimetable(timetableData || BATCH_TIMETABLE);
+
+                // Mark as seen
+                if (user?.id) {
+                    localStorage.setItem(`batch_last_seen_${batchId}_${user.id}`, Date.now().toString());
+                }
             } catch (e) {
                 console.error("Fetch error", e);
             } finally {

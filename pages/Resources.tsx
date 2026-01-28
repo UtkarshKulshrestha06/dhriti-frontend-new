@@ -9,6 +9,7 @@ import { api } from '../services/api';
 const Resources: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'All' | 'Physics' | 'Chemistry' | 'Mathematics' | 'Biology'>('All');
   const [resources, setResources] = useState<Resource[]>([]);
+  const [viewedResources, setViewedResources] = useState<Set<string>>(new Set());
 
   // State to hold videos - initializes with static data, updates with API data if successful
   const [videos, setVideos] = useState<Video[]>(VIDEOS);
@@ -126,9 +127,22 @@ const Resources: React.FC = () => {
       }
     };
 
-    fetchVideos();
     fetchResources();
   }, []);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('viewed_public_res');
+    if (stored) setViewedResources(new Set(JSON.parse(stored)));
+  }, []);
+
+  const handleDownload = (id: string, url?: string) => {
+    if (!url) return;
+    const newSet = new Set(viewedResources);
+    newSet.add(id);
+    setViewedResources(newSet);
+    localStorage.setItem('viewed_public_res', JSON.stringify(Array.from(newSet)));
+    window.open(url, '_blank');
+  };
 
   const filteredResources = activeTab === 'All'
     ? resources
@@ -342,8 +356,11 @@ const Resources: React.FC = () => {
                         }`}>
                         {resource.subject}
                       </span>
-                      <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 group-hover:text-ocean-600 transition-colors">
+                      <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 group-hover:text-ocean-600 transition-colors flex items-center gap-2">
                         {resource.title}
+                        {(resource.isNew || resource.is_new) && !viewedResources.has(resource.id) && (
+                          <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded animate-pulse">NEW</span>
+                        )}
                       </h3>
                       <div className="flex items-center gap-4 text-xs font-medium text-gray-500">
                         <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {resource.date}</span>
@@ -351,7 +368,10 @@ const Resources: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <button className="text-gray-400 hover:text-ocean-600 transition-colors">
+                  <button
+                    onClick={() => handleDownload(resource.id, resource.file_url)}
+                    className="text-gray-400 hover:text-ocean-600 transition-colors"
+                  >
                     <Download className="w-5 h-5" />
                   </button>
                 </div>

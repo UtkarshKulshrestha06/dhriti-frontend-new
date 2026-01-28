@@ -52,6 +52,7 @@ const StudentDashboard: React.FC = () => {
     const [freebieForm, setFreebieForm] = useState({ title: '', type: 'NOTES', subject: 'All' });
     const [freebieFile, setFreebieFile] = useState<File | null>(null);
     const [showFreebieModal, setShowFreebieModal] = useState(false);
+    const [unreadBatches, setUnreadBatches] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         fetchData();
@@ -192,6 +193,25 @@ const StudentDashboard: React.FC = () => {
             setFetchError(true);
         } finally {
             setIsLoading(false);
+
+            // Post-fetch check for unread announcements
+            if (courses.length > 0 && !isAdmin && !isTeacher) {
+                const checkUnread = async () => {
+                    const newUnread = new Set<string>();
+                    await Promise.all(courses.map(async (course) => {
+                        try {
+                            const anns = await api.announcements.list(course.id);
+                            if (anns && anns.length > 0) {
+                                const latestTime = new Date(anns[0].created_at || anns[0].date).getTime();
+                                const lastSeen = Number(localStorage.getItem(`batch_last_seen_${course.id}_${user?.id}`)) || 0;
+                                if (latestTime > lastSeen) newUnread.add(course.id);
+                            }
+                        } catch (err) { /* ignore */ }
+                    }));
+                    setUnreadBatches(newUnread);
+                };
+                checkUnread();
+            }
         }
     };
 
@@ -426,8 +446,11 @@ const StudentDashboard: React.FC = () => {
                                             )}
                                         </div>
 
-                                        <h3 className="text-3xl font-extrabold text-slate-900 leading-tight mb-2 group-hover:text-ocean-700 transition-colors">
+                                        <h3 className="text-3xl font-extrabold text-slate-900 leading-tight mb-2 group-hover:text-ocean-700 transition-colors flex items-center gap-3">
                                             {course.title}
+                                            {unreadBatches.has(course.id) && (
+                                                <span className="w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm animate-pulse"></span>
+                                            )}
                                         </h3>
                                         <p className="text-lg font-bold text-gray-400 mb-6">{course.subTitle || 'Batch'}</p>
 

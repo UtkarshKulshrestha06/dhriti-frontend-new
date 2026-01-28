@@ -95,6 +95,8 @@ export interface Resource {
   size: string;
   file_url?: string;
   created_at?: string;
+  is_new?: boolean;
+  isNew?: boolean;
 }
 
 export interface Video {

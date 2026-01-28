@@ -12,11 +12,13 @@ import { api } from '../../../services/api';
 import ModernDatePicker from '../../../components/ModernDatePicker';
 import ModernTimePicker from '../../../components/ModernTimePicker';
 import { useToast } from '../../../context/ToastContext';
+import { useAuth } from '../../../context/AuthContext';
 
 const TeacherBatchDetail: React.FC = () => {
   const { batchId } = useParams<{ batchId: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user } = useAuth();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [announcements, setAnnouncements] = useState<BatchAnnouncement[]>([]);
@@ -57,6 +59,11 @@ const TeacherBatchDetail: React.FC = () => {
           api.timetable.get(batchId)
         ]);
         setCourse(courseData || null);
+
+        // Mark as seen
+        if (user?.id) {
+          localStorage.setItem(`batch_last_seen_${batchId}_${user.id}`, Date.now().toString());
+        }
 
         // Normalize announcements
         const normalizedAnn = (annData || []).map((a: any) => ({
