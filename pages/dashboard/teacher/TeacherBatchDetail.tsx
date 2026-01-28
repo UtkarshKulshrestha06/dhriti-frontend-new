@@ -13,12 +13,14 @@ import ModernDatePicker from '../../../components/ModernDatePicker';
 import ModernTimePicker from '../../../components/ModernTimePicker';
 import { useToast } from '../../../context/ToastContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useViewStatus } from '../../../hooks/useViewStatus';
 
 const TeacherBatchDetail: React.FC = () => {
   const { batchId } = useParams<{ batchId: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { user } = useAuth();
+  const { markBatchAsSeen } = useViewStatus();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [announcements, setAnnouncements] = useState<BatchAnnouncement[]>([]);
@@ -60,9 +62,9 @@ const TeacherBatchDetail: React.FC = () => {
         ]);
         setCourse(courseData || null);
 
-        // Mark as seen
-        if (user?.id) {
-          localStorage.setItem(`batch_last_seen_${batchId}_${user.id}`, Date.now().toString());
+        // Mark as seen using the centralized hook
+        if (batchId) {
+          markBatchAsSeen(batchId);
         }
 
         // Normalize announcements

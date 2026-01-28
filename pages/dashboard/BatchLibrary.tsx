@@ -8,6 +8,7 @@ import { ResourceType, LibraryResource, LibraryChapter, Subject } from '../../ty
 import PDFViewer from '../../components/PDFViewer';
 import Button from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
+import { useViewStatus } from '../../hooks/useViewStatus';
 
 const BatchLibrary: React.FC = () => {
   const { batchId } = useParams<{ batchId: string }>();
@@ -35,9 +36,7 @@ const BatchLibrary: React.FC = () => {
     title: ''
   });
 
-  // Persistent Viewed State
-  const [viewedResources, setViewedResources] = useState<Set<string>>(new Set());
-  const [viewedChapters, setViewedChapters] = useState<Set<string>>(new Set());
+  const { isResourceUnread, isChapterUnread, markResourceAsRead, markChapterAsRead } = useViewStatus();
 
   // Fetch subjects on mount
   useEffect(() => {
@@ -97,32 +96,12 @@ const BatchLibrary: React.FC = () => {
     fetchChaptersAndResources();
   }, [batchId, activeSubjectId]);
 
-  // Load viewed state from local storage on mount
-  useEffect(() => {
-    if (user?.id) {
-      const storedViewedRes = localStorage.getItem(`viewed_res_${user.id}`);
-      const storedViewedCh = localStorage.getItem(`viewed_ch_${user.id}`);
-      if (storedViewedRes) setViewedResources(new Set(JSON.parse(storedViewedRes)));
-      if (storedViewedCh) setViewedChapters(new Set(JSON.parse(storedViewedCh)));
-    }
-  }, [user?.id]);
-
   if (!course) return <div>Batch not found</div>;
 
   // --- LOGIC FOR "NEW" INDICATORS ---
-  const isResourceUnread = (res: LibraryResource) => {
-    return (res.isNew || res.is_new) && !viewedResources.has(res.id);
-  };
-
-  const isChapterUnread = (chapter: LibraryChapter) => {
-    if ((chapter.isNew || chapter.is_new) && !viewedChapters.has(chapter.id)) return true;
-    const chapterId = chapter.id;
-    const resourcesInChapter = allResources.filter(r => (r.chapterId || r.chapter_id) === chapterId);
-    return resourcesInChapter.some(r => isResourceUnread(r));
-  };
-
   const isSubjectUnread = (subjectId: string) => {
-    return chapters.some(c => isChapterUnread(c));
+    // We check if any of the visible chapters are unread using the hook
+    return chapters.some(c => isChapterUnread(c, allResources));
   };
 
   // --- FILTERING & SORTING ---
@@ -143,29 +122,13 @@ const BatchLibrary: React.FC = () => {
 
   // --- ACTIONS ---
 
-  const markChapterViewed = (id: string) => {
-    if (!user?.id) return;
-    const newSet = new Set(viewedChapters);
-    newSet.add(id);
-    setViewedChapters(newSet);
-    localStorage.setItem(`viewed_ch_${user.id}`, JSON.stringify(Array.from(newSet)));
-  };
-
-  const markResourceViewed = (id: string) => {
-    if (!user?.id) return;
-    const newSet = new Set(viewedResources);
-    newSet.add(id);
-    setViewedResources(newSet);
-    localStorage.setItem(`viewed_res_${user.id}`, JSON.stringify(Array.from(newSet)));
-  };
-
   const handleChapterClick = (chapterId: string) => {
     setActiveChapterId(chapterId);
-    markChapterViewed(chapterId);
+    markChapterAsRead(chapterId);
   };
 
   const handleResourceClick = (res: LibraryResource) => {
-    markResourceViewed(res.id);
+    markResourceAsRead(res.id);
     setPdfViewerState({
       isOpen: true,
       url: res.url,
@@ -264,7 +227,7 @@ const BatchLibrary: React.FC = () => {
                 <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-ocean-600" /></div>
               ) : chapters.length > 0 ? (
                 chapters.map(chapter => {
-                  const hasNew = isChapterUnread(chapter);
+                  const hasNew = isChapterUnread(chapter, allResources);
                   return (
                     <button
                       key={chapter.id}

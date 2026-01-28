@@ -11,6 +11,7 @@ import ConfirmationModal from '../../../components/ConfirmationModal';
 import { api } from '../../../services/api';
 import { useToast } from '../../../context/ToastContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useViewStatus } from '../../../hooks/useViewStatus';
 
 const TeacherBatchLibrary: React.FC = () => {
   const { batchId } = useParams<{ batchId: string }>();
@@ -50,19 +51,7 @@ const TeacherBatchLibrary: React.FC = () => {
   const [editingResource, setEditingResource] = useState<{ id: string, title: string } | null>(null);
   const [newChapterTitle, setNewChapterTitle] = useState('');
 
-  // Persistent Viewed State (Syncing with Student Logic)
-  const [viewedResources, setViewedResources] = useState<Set<string>>(new Set());
-  const [viewedChapters, setViewedChapters] = useState<Set<string>>(new Set());
-
-  // Load viewed state from local storage on mount
-  useEffect(() => {
-    if (user?.id) {
-      const storedViewedRes = localStorage.getItem(`viewed_res_${user.id}`);
-      const storedViewedCh = localStorage.getItem(`viewed_ch_${user.id}`);
-      if (storedViewedRes) setViewedResources(new Set(JSON.parse(storedViewedRes)));
-      if (storedViewedCh) setViewedChapters(new Set(JSON.parse(storedViewedCh)));
-    }
-  }, [user?.id]);
+  const { isResourceUnread, isChapterUnread, markResourceAsRead, markChapterAsRead } = useViewStatus();
 
   // Fetch subjects on mount
   useEffect(() => {
@@ -130,46 +119,24 @@ const TeacherBatchLibrary: React.FC = () => {
   });
 
   // --- LOGIC FOR "NEW" INDICATORS (BUBBLING) ---
-  const isResourceUnread = (res: LibraryResource) => {
-    return (res.isNew || res.is_new) && !viewedResources.has(res.id);
-  };
-
-  const isChapterUnread = (chapter: LibraryChapter) => {
-    if ((chapter.isNew || chapter.is_new) && !viewedChapters.has(chapter.id)) return true;
-    const resourcesInChapter = resources.filter(r => (r.chapterId || r.chapter_id) === chapter.id);
-    return resourcesInChapter.some(r => isResourceUnread(r));
-  };
-
   const hasNewInSubject = (subjectId: string) => {
-    return chapters.some(c => isChapterUnread(c));
+    return chapters.some(c => isChapterUnread(c, resources));
   };
 
   // --- ACTIONS ---
 
-  const markChapterViewed = (id: string) => {
-    if (!user?.id) return;
-    const newSet = new Set(viewedChapters);
-    newSet.add(id);
-    setViewedChapters(newSet);
-    localStorage.setItem(`viewed_ch_${user.id}`, JSON.stringify(Array.from(newSet)));
-  };
-
-  const markResourceViewed = (id: string) => {
-    if (!user?.id) return;
-    const newSet = new Set(viewedResources);
-    newSet.add(id);
-    setViewedResources(newSet);
-    localStorage.setItem(`viewed_res_${user.id}`, JSON.stringify(Array.from(newSet)));
-  };
-
   const handleChapterClick = (chapterId: string) => {
     setActiveChapterId(chapterId);
-    markChapterViewed(chapterId);
+    markChapterAsRead(chapterId);
   };
 
-  const handleResourceClick = (res: { id: string, title: string, url: string }) => {
-    markResourceViewed(res.id);
-    setPdfViewerState({ isOpen: true, url: res.url, title: res.title });
+  const handleResourceClick = (res: LibraryResource) => {
+    markResourceAsRead(res.id);
+    setPdfViewerState({
+      isOpen: true,
+      url: res.url,
+      title: res.title
+    });
   };
 
   const getResourceTypeIcon = (type: ResourceType) => {
@@ -388,7 +355,7 @@ const TeacherBatchLibrary: React.FC = () => {
               <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-ocean-600" /></div>
             ) : chapters.length > 0 ? (
               chapters.map(chapter => {
-                const hasNew = isChapterUnread(chapter);
+                const hasNew = isChapterUnread(chapter, resources);
                 return (
                   <div key={chapter.id} className="group/item relative">
                     <button

@@ -5,11 +5,13 @@ import { VIDEOS, YOUTUBE_CONFIG } from '../constants';
 import Button from '../components/Button';
 import { Video, Resource } from '../types';
 import { api } from '../services/api';
+import { useViewStatus } from '../hooks/useViewStatus';
 
 const Resources: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'All' | 'Physics' | 'Chemistry' | 'Mathematics' | 'Biology'>('All');
   const [resources, setResources] = useState<Resource[]>([]);
-  const [viewedResources, setViewedResources] = useState<Set<string>>(new Set());
+
+  const { isPublicResourceUnread, markPublicResourceAsRead } = useViewStatus();
 
   // State to hold videos - initializes with static data, updates with API data if successful
   const [videos, setVideos] = useState<Video[]>(VIDEOS);
@@ -130,17 +132,9 @@ const Resources: React.FC = () => {
     fetchResources();
   }, []);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('viewed_public_res');
-    if (stored) setViewedResources(new Set(JSON.parse(stored)));
-  }, []);
-
   const handleDownload = (id: string, url?: string) => {
     if (!url) return;
-    const newSet = new Set(viewedResources);
-    newSet.add(id);
-    setViewedResources(newSet);
-    localStorage.setItem('viewed_public_res', JSON.stringify(Array.from(newSet)));
+    markPublicResourceAsRead(id);
     window.open(url, '_blank');
   };
 
@@ -358,7 +352,7 @@ const Resources: React.FC = () => {
                       </span>
                       <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 group-hover:text-ocean-600 transition-colors flex items-center gap-2">
                         {resource.title}
-                        {(resource.isNew || resource.is_new) && !viewedResources.has(resource.id) && (
+                        {isPublicResourceUnread(resource) && (
                           <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded animate-pulse">NEW</span>
                         )}
                       </h3>

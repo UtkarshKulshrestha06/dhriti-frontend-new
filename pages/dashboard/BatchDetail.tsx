@@ -8,6 +8,7 @@ import { ArrowLeft, Bell, Calendar, BookOpen, Clock, AlertCircle, User, MessageC
 import Button from '../../components/Button';
 import { useAuth } from '../../context/AuthContext';
 import MarkdownText from '../../components/MarkdownText';
+import { useViewStatus } from '../../hooks/useViewStatus';
 
 const BatchDetail: React.FC = () => {
     const { batchId } = useParams<{ batchId: string }>();
@@ -20,6 +21,8 @@ const BatchDetail: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'ANNOUNCEMENTS' | 'TIMETABLE'>('ANNOUNCEMENTS');
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+    const { markBatchAsSeen } = useViewStatus();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -43,9 +46,9 @@ const BatchDetail: React.FC = () => {
                 setAnnouncements(normalizedAnn);
                 setTimetable(timetableData || BATCH_TIMETABLE);
 
-                // Mark as seen
-                if (user?.id) {
-                    localStorage.setItem(`batch_last_seen_${batchId}_${user.id}`, Date.now().toString());
+                // Mark as seen using the centralized hook
+                if (batchId) {
+                    markBatchAsSeen(batchId);
                 }
             } catch (e) {
                 console.error("Fetch error", e);

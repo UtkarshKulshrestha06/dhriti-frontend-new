@@ -10,6 +10,7 @@ import { useToast } from '../../context/ToastContext';
 import Modal from '../../components/Modal';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import ManageEnrollmentsModal from '../../components/ManageEnrollmentsModal';
+import { useViewStatus } from '../../hooks/useViewStatus';
 
 const StudentDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -53,6 +54,8 @@ const StudentDashboard: React.FC = () => {
     const [freebieFile, setFreebieFile] = useState<File | null>(null);
     const [showFreebieModal, setShowFreebieModal] = useState(false);
     const [unreadBatches, setUnreadBatches] = useState<Set<string>>(new Set());
+
+    const { isAnnouncementUnread } = useViewStatus();
 
     useEffect(() => {
         fetchData();
@@ -202,9 +205,9 @@ const StudentDashboard: React.FC = () => {
                         try {
                             const anns = await api.announcements.list(course.id);
                             if (anns && anns.length > 0) {
-                                const latestTime = new Date(anns[0].created_at || anns[0].date).getTime();
-                                const lastSeen = Number(localStorage.getItem(`batch_last_seen_${course.id}_${user?.id}`)) || 0;
-                                if (latestTime > lastSeen) newUnread.add(course.id);
+                                if (isAnnouncementUnread(anns[0])) {
+                                    newUnread.add(course.id);
+                                }
                             }
                         } catch (err) { /* ignore */ }
                     }));
