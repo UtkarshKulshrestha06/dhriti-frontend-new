@@ -46,7 +46,10 @@ const BatchStudents: React.FC = () => {
         try {
             // Fetch enrolled students (Critical)
             try {
+                console.log(`[DEBUG] Fetching students for batch: ${batchId}`);
                 const enrolled = await api.enrollments.listByBatch(batchId);
+                console.log(`[DEBUG] Received ${enrolled?.length || 0} students:`, enrolled);
+
                 const normalizeUser = (u: any) => ({
                     ...u,
                     firstName: u.first_name || u.firstName || (u.name?.split(' ')[0]) || '',
