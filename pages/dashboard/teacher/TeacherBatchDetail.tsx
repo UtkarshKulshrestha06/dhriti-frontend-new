@@ -54,34 +54,61 @@ const TeacherBatchDetail: React.FC = () => {
       if (!batchId) return;
       setIsLoading(true);
       try {
-        const [courseData, annData, allUsers, timetableData] = await Promise.all([
+        // Use Promise.allSettled to prevent one failure (like 403 on users) from breaking everything
+        const results = await Promise.allSettled([
           api.courses.get(batchId),
           api.announcements.list(batchId),
           api.users.list(),
           api.timetable.get(batchId)
         ]);
-        setCourse(courseData || null);
+
+        // 0: Course
+        if (results[0].status === 'fulfilled') {
+          setCourse(results[0].value);
+        } else {
+          console.error("Failed to fetch course", results[0].reason);
+          setCourse(null);
+        }
+
+        // 1: Announcements
+        if (results[1].status === 'fulfilled') {
+          const annData = results[1].value || [];
+          // Normalize announcements
+          const normalizedAnn = annData.map((a: any) => ({
+            ...a,
+            batchId: a.batch_id || a.batchId,
+            isImportant: a.is_important || a.isImportant,
+            date: a.date || (a.created_at ? new Date(a.created_at).toLocaleDateString('en-GB') : ''),
+            time: a.time || (a.created_at ? new Date(a.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''),
+            // If author is missing, try to find name from users list later, or default
+            authorName: a.author_name || (a.user_id === user?.id ? 'You' : 'Teacher')
+          }));
+          setAnnouncements(normalizedAnn);
+        }
+
+        // 2: Users (Teachers)
+        if (results[2].status === 'fulfilled') {
+          const allUsers = results[2].value;
+          setTeachers(allUsers.filter((u: any) => u.role === 'TEACHER' || u.user_metadata?.role === 'TEACHER'));
+        } else {
+          // If users fetch fails (e.g. 403), we still want to allow the current user to select themselves if they are a teacher
+          if (user && user.role === 'TEACHER') {
+            setTeachers([user]);
+          } else {
+            setTeachers([]);
+          }
+        }
+
+        // 3: Timetable
+        if (results[3].status === 'fulfilled') {
+          setTimetable(results[3].value || []);
+        }
 
         // Mark as seen using the centralized hook
         if (batchId) {
           markBatchAsSeen(batchId);
         }
 
-        // Normalize announcements
-        const normalizedAnn = (annData || []).map((a: any) => ({
-          ...a,
-          batchId: a.batch_id || a.batchId,
-          isImportant: a.is_important || a.isImportant,
-          date: a.date || (a.created_at ? new Date(a.created_at).toLocaleDateString('en-GB') : ''),
-          time: a.time || (a.created_at ? new Date(a.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '')
-        }));
-        setAnnouncements(normalizedAnn);
-
-        // Filter teachers for dropdown
-        setTeachers(allUsers.filter((u: any) => u.role === 'TEACHER' || u.user_metadata?.role === 'TEACHER'));
-
-        // Initialize Timetable
-        setTimetable(timetableData || []);
       } catch (error) {
         console.error("Failed to fetch teacher dashboard data", error);
         showToast("Failed to load data", "error");
@@ -90,7 +117,7 @@ const TeacherBatchDetail: React.FC = () => {
       }
     };
     fetchData();
-  }, [batchId]);
+  }, [batchId, user]);
 
   const sortedAnnouncements = [...announcements].sort((a, b) => {
     const dateA = new Date(a.date || a.created_at || 0);
@@ -134,7 +161,7 @@ const TeacherBatchDetail: React.FC = () => {
         isImportant: data.isImportant,
         date: new Date().toLocaleDateString('en-GB'),
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        author: 'You'
+        authorName: 'You'
       };
       setAnnouncements([normalizedCreated, ...announcements]);
       showToast("Announcement posted", "success");
@@ -411,7 +438,7 @@ const TeacherBatchDetail: React.FC = () => {
                           <div className="flex items-center gap-6 text-gray-500 font-bold">
                             <span className="flex items-center gap-2 text-ocean-700 bg-ocean-50 px-3 py-1.5 rounded-lg">
                               <User className="w-3.5 h-3.5" />
-                              <span className="uppercase tracking-wide">{ann.author}</span>
+                              <span className="uppercase tracking-wide">{ann.authorName || ann.author || 'Admin'}</span>
                             </span>
                             <span className="flex items-center gap-2 font-medium bg-gray-50 px-3 py-1.5 rounded-lg"><Clock className="w-3.5 h-3.5" /> {ann.time}</span>
                           </div>
@@ -597,21 +624,30 @@ const TeacherBatchDetail: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1">Faculty</label>
-              <select
-                value={classForm.faculty}
-                onChange={(e) => setClassForm({ ...classForm, faculty: e.target.value })}
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-ocean-500 bg-white text-slate-900"
-              >
-                <option value="">Select Faculty</option>
-                {teachers.map(t => (
-                  <option key={t.id} value={`${t.firstName} ${t.lastName}`}>
-                    {t.firstName} {t.lastName} ({t.subject})
-                  </option>
-                ))}
-                <option value="Guest Faculty">Guest Faculty</option>
-              </select>
+              {teachers.length > 0 ? (
+                <select
+                  value={classForm.faculty}
+                  onChange={(e) => setClassForm({ ...classForm, faculty: e.target.value })}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-ocean-500 bg-white text-slate-900"
+                >
+                  <option value="">Select Faculty</option>
+                  {teachers.map(t => (
+                    <option key={t.id} value={`${t.firstName || t.first_name || ''} ${t.lastName || t.last_name || ''}`.trim()}>
+                      {`${t.firstName || t.first_name || ''} ${t.lastName || t.last_name || ''}`.trim()}
+                    </option>
+                  ))}
+                  <option value="Guest Faculty">Guest Faculty</option>
+                </select>
+              ) : (
+                <input
+                  value={classForm.faculty}
+                  onChange={(e) => setClassForm({ ...classForm, faculty: e.target.value })}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-ocean-500 bg-white text-slate-900"
+                  placeholder="Enter Faculty Name"
+                />
+              )}
             </div>
-          </div>
+          </div >
 
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Topic</label>
@@ -623,10 +659,10 @@ const TeacherBatchDetail: React.FC = () => {
               placeholder="e.g. Thermodynamics - Lecture 1"
             />
           </div>
-        </div>
-      </Modal>
+        </div >
+      </Modal >
 
-    </div>
+    </div >
   );
 };
 
