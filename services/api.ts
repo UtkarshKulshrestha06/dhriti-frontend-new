@@ -85,9 +85,12 @@ export const api = {
     courses: {
         list: async (): Promise<Course[]> => {
             const data = await request('/batches');
-            return data.batches.map((b: any) => ({
+            return (data.batches || []).map((b: any) => ({
                 ...b,
-                category: b.stream_name || b.stream_id || 'General', // Fallback for UI
+                category: b.stream_name || 'General',
+                targetYear: b.target_year || b.targetYear,
+                subTitle: b.subtitle || b.subTitle,
+                colorTheme: b.color_theme || b.colorTheme,
                 features: b.features || []
             }));
         },
@@ -95,7 +98,10 @@ export const api = {
             const b = await request(`/batches/${id}`);
             return {
                 ...b,
-                category: b.stream_name || b.stream_id || 'General',
+                category: b.stream_name || 'General',
+                targetYear: b.target_year || b.targetYear,
+                subTitle: b.subtitle || b.subTitle,
+                colorTheme: b.color_theme || b.colorTheme,
                 features: b.features || []
             };
         },

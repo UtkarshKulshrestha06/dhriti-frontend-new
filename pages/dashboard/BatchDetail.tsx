@@ -96,7 +96,6 @@ const BatchDetail: React.FC = () => {
                     <div>
                         <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-3">
                             {course.title}
-                            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shadow-md shadow-red-200">LIVE</span>
                         </h1>
                         <p className="text-sm font-medium text-gray-500 mt-1">{course.subTitle} • Target {course.targetYear}</p>
                     </div>

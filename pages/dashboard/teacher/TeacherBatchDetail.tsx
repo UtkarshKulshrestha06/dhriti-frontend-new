@@ -303,7 +303,6 @@ const TeacherBatchDetail: React.FC = () => {
           <div>
             <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">
               {course.title}
-              <span className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full uppercase font-bold border border-slate-200">{course.category}</span>
             </h1>
             <p className="text-xs font-medium text-gray-400 mt-1 uppercase tracking-wide">Teacher Command Center</p>
           </div>
@@ -579,6 +578,7 @@ const TeacherBatchDetail: React.FC = () => {
       <Modal
         isOpen={showTimetableModal}
         onClose={() => setShowTimetableModal(false)}
+        maxWidth="max-w-[35rem]"
         title={isEditingClass ? "Edit Class Schedule" : "Add New Class"}
         footer={
           <>
