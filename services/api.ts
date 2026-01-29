@@ -139,7 +139,12 @@ export const api = {
         list: async (batchId: string, subjectId: string, chapterId?: string): Promise<LibraryResource[]> => {
             let url = `/resources?batch=${batchId}&subject=${subjectId}`;
             if (chapterId) url += `&chapter=${chapterId}`;
-            return request(url);
+            const data = await request(url);
+            return (data || []).map((res: any) => ({
+                ...res,
+                uploadDate: res.created_at ? new Date(res.created_at).toLocaleDateString() : 'Recent',
+                subject: res.subject || 'General'
+            }));
         },
         create: async (data: Partial<LibraryResource>) => request('/resources', {
             method: 'POST',
@@ -196,7 +201,14 @@ export const api = {
     },
 
     announcements: {
-        list: async (batchId: string) => request(`/announcements?batch=${batchId}`),
+        list: async (batchId: string) => {
+            const data = await request(`/announcements?batch=${batchId}`);
+            return (data || []).map((ann: any) => ({
+                ...ann,
+                authorName: ann.users ? `${ann.users.first_name || ''} ${ann.users.last_name || ''}`.trim() : 'Teacher',
+                author: ann.author // Backward compatibility
+            }));
+        },
         create: async (data: any) => request('/announcements', {
             method: 'POST',
             body: JSON.stringify(data)
