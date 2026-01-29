@@ -272,7 +272,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ url, title, onClose }) => {
                         <div className="w-full h-[150vh] bg-white rounded-lg overflow-hidden relative">
                             <iframe
                                 // Strip query params if they cause 404s, but keep #toolbar for browser-native viewer
-                                src={url && url.includes('supabase') ? url.split('?')[0] + '#toolbar=0' : url ? `${url}#toolbar=0&navpanes=0&scrollbar=0` : ''}
+                                src={url ? `${url}#toolbar=0&navpanes=0&scrollbar=0` : ''}
                                 className="w-full h-full block"
                                 title="PDF Viewer"
                                 style={{ pointerEvents: isDrawingMode ? 'none' : 'auto' }}

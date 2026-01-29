@@ -104,7 +104,14 @@ const TeacherBatchDetail: React.FC = () => {
 
   if (!course) {
     if (isLoading) return <div className="p-12 flex justify-center"><Loader2 className="w-10 h-10 animate-spin text-ocean-600" /></div>;
-    return <div>Batch not found</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-12 text-center">
+        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Batch Not Found</h3>
+        <p className="text-gray-500 mb-6">The batch you are looking for does not exist or you do not have permission to view it.</p>
+        <Button onClick={() => navigate('/dashboard')} variant="outline">Go Back to Dashboard</Button>
+      </div>
+    );
   }
 
   // --- ANNOUNCEMENT HANDLERS ---
@@ -350,16 +357,16 @@ const TeacherBatchDetail: React.FC = () => {
                 {sortedAnnouncements.length > 0 ? (
                   <div className="space-y-6">
                     {sortedAnnouncements.map((ann) => (
-                      <div key={ann.id} className={`p-6 rounded-3xl border transition-all ${ann.isImportant ? 'bg-red-50/40 border-red-100 shadow-sm' : 'bg-white border-gray-100 shadow-sm hover:shadow-md'}`}>
+                      <div key={ann.id} className={`p-6 rounded-3xl border transition-all ${ann.isImportant ? 'bg-red-50/30 border-red-100' : 'bg-white border-gray-100 hover:shadow-md'}`}>
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full shadow-sm ${ann.isImportant ? 'bg-red-500 animate-pulse' : 'bg-ocean-500'}`}></div>
-                            <h4 className={`font-bold text-xl ${ann.isImportant ? 'text-red-900' : 'text-slate-900'}`}>
+                            <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${ann.isImportant ? 'bg-red-500 animate-pulse' : 'bg-ocean-500'}`}></div>
+                            <h4 className="font-bold text-lg text-slate-900 leading-snug">
                               {ann.title}
                             </h4>
                             {ann.isImportant && (
-                              <span className="bg-red-100 text-red-600 text-[10px] font-black uppercase px-2 py-0.5 rounded flex items-center gap-1 border border-red-200">
-                                <AlertCircle className="w-3 h-3" /> Urgent
+                              <span className="bg-red-100 text-red-600 text-[10px] font-black uppercase px-2 py-0.5 rounded border border-red-200 tracking-wide">
+                                Urgent
                               </span>
                             )}
                           </div>

@@ -370,7 +370,6 @@ const StudentDashboard: React.FC = () => {
                         {[
                             { id: 'BATCHES', label: 'Batches', icon: Layers },
                             { id: 'USERS', label: 'Directory', icon: Users },
-                            { id: 'STREAMS', label: 'Streams', icon: Briefcase },
                             { id: 'FREEBIES', label: 'Public Content', icon: Star }
                         ].map(tab => (
                             <button

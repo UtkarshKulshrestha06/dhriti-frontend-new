@@ -41,28 +41,38 @@ const BatchLibrary: React.FC = () => {
   // Fetch subjects on mount
   useEffect(() => {
     const fetchSubjects = async () => {
-      if (!batchId || batchId === 'freebies') {
-        // Use mock data for freebies or fallback
-        setSubjects([{ id: 'physics', name: 'Physics' }, { id: 'chemistry', name: 'Chemistry' }, { id: 'mathematics', name: 'Mathematics' }]);
-        setActiveSubjectId('physics');
+      if (batchId === 'freebies') {
+        try {
+          // Fetch all freebies to derive subjects
+          const allFreebies = await api.freebies.list();
+          if (allFreebies && allFreebies.length > 0) {
+            const uniqueSubjects = Array.from(new Set(allFreebies.map(f => f.subject || 'General')));
+            const subjectList = uniqueSubjects.map(s => ({ id: s.toLowerCase(), name: s }));
+            setSubjects(subjectList);
+            setActiveSubjectId(subjectList[0].id);
+          } else {
+            setSubjects([{ id: 'general', name: 'General' }]);
+            setActiveSubjectId('general');
+          }
+        } catch (e) {
+          setSubjects([{ id: 'general', name: 'General' }]);
+          setActiveSubjectId('general');
+        }
         setIsLoading(false);
         return;
       }
+
       try {
-        const subs = await api.subjects.list(batchId);
+        const subs = await api.subjects.list(batchId!);
         if (subs && subs.length > 0) {
           setSubjects(subs);
           setActiveSubjectId(subs[0].id);
         } else {
-          // Fallback to mock
-          setSubjects([{ id: 'physics', name: 'Physics' }, { id: 'chemistry', name: 'Chemistry' }, { id: 'mathematics', name: 'Mathematics' }]);
-          setActiveSubjectId('physics');
+          setSubjects([]);
         }
       } catch (e) {
         console.error("Failed to fetch subjects", e);
-        // Fallback to mock subjects
-        setSubjects([{ id: 'physics', name: 'Physics' }, { id: 'chemistry', name: 'Chemistry' }, { id: 'mathematics', name: 'Mathematics' }]);
-        setActiveSubjectId('physics');
+        setSubjects([]);
       } finally {
         setIsLoading(false);
       }
@@ -73,8 +83,28 @@ const BatchLibrary: React.FC = () => {
   // Fetch chapters and resources when subject changes
   useEffect(() => {
     const fetchChaptersAndResources = async () => {
-      if (!batchId || !activeSubjectId) return;
+      if (!activeSubjectId) return;
       setIsLoading(true);
+
+      if (batchId === 'freebies') {
+        try {
+          const allFreebies = await api.freebies.list();
+          // Filter by active subject (name matching)
+          const currentSubjectName = subjects.find(s => s.id === activeSubjectId)?.name;
+          const filtered = allFreebies?.filter(f => (f.subject || 'General') === currentSubjectName) || [];
+
+          setChapters([]); // Freebies might not have chapters, or we can group them if needed
+          setAllResources(filtered);
+        } catch (e) {
+          console.error("Failed to fetch freebies", e);
+        } finally {
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      if (!batchId) return;
+
       try {
         const [chapterData, resourceData] = await Promise.all([
           api.chapters.list(batchId, activeSubjectId),
@@ -85,16 +115,14 @@ const BatchLibrary: React.FC = () => {
         setActiveChapterId(chapterData?.length > 0 ? chapterData[0].id : null);
       } catch (e) {
         console.error("Failed to fetch chapters/resources", e);
-        // Fallback to constants for demo
-        const activeSubjectName = subjects.find(s => s.id === activeSubjectId)?.name || 'Physics';
-        setChapters(LIBRARY_CHAPTERS.filter(c => c.subject === activeSubjectName));
-        setAllResources(LIBRARY_RESOURCES);
+        setChapters([]);
+        setAllResources([]);
       } finally {
         setIsLoading(false);
       }
     };
     fetchChaptersAndResources();
-  }, [batchId, activeSubjectId]);
+  }, [batchId, activeSubjectId, subjects]);
 
   if (!course) return <div>Batch not found</div>;
 
