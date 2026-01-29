@@ -134,7 +134,7 @@ const TeacherBatchLibrary: React.FC = () => {
     markResourceAsRead(res.id);
     setPdfViewerState({
       isOpen: true,
-      url: res.url,
+      url: res.file_url || res.url || '',
       title: res.title
     });
   };
