@@ -44,23 +44,36 @@ const BatchStudents: React.FC = () => {
         if (!batchId) return;
         setIsLoading(true);
         try {
-            const [enrolled, all] = await Promise.all([
-                api.enrollments.listByBatch(batchId),
-                api.users.list()
-            ]);
+            // Fetch enrolled students (Critical)
+            try {
+                const enrolled = await api.enrollments.listByBatch(batchId);
+                const normalizeUser = (u: any) => ({
+                    ...u,
+                    firstName: u.first_name || u.firstName || (u.name?.split(' ')[0]) || '',
+                    lastName: u.last_name || u.lastName || (u.name?.split(' ').slice(1).join(' ')) || '',
+                    subscribedBatchIds: u.subscribed_batches || u.subscribedBatchIds || []
+                });
+                setEnrolledUsers((enrolled || []).map(normalizeUser));
+            } catch (e) {
+                console.error("Failed to fetch enrolled students", e);
+                showToast("Failed to load enrolled students", "error");
+            }
 
-            const normalizeUser = (u: any) => ({
-                ...u,
-                firstName: u.first_name || u.firstName || (u.name?.split(' ')[0]) || '',
-                lastName: u.last_name || u.lastName || (u.name?.split(' ').slice(1).join(' ')) || '',
-                subscribedBatchIds: u.subscribed_batches || u.subscribedBatchIds || []
-            });
+            // Fetch all users for selection (Non-critical)
+            try {
+                const all = await api.users.list();
+                const normalizeUser = (u: any) => ({
+                    ...u,
+                    firstName: u.first_name || u.firstName || (u.name?.split(' ')[0]) || '',
+                    lastName: u.last_name || u.lastName || (u.name?.split(' ').slice(1).join(' ')) || '',
+                    subscribedBatchIds: u.subscribed_batches || u.subscribedBatchIds || []
+                });
+                setAllUsers((all || []).map(normalizeUser));
+            } catch (e) {
+                console.warn("Failed to fetch all users list (likely permission restricted)", e);
+                // Don't show toast, as this is secondary
+            }
 
-            setEnrolledUsers((enrolled || []).map(normalizeUser));
-            setAllUsers((all || []).map(normalizeUser));
-        } catch (e) {
-            console.error("Failed to fetch students", e);
-            showToast("Failed to load students", "error");
         } finally {
             setIsLoading(false);
         }
@@ -226,8 +239,8 @@ const BatchStudents: React.FC = () => {
                                         </td>
                                         <td className="p-4">
                                             <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${u.role === 'ADMIN' ? 'bg-red-100 text-red-600' :
-                                                    u.role === 'TEACHER' ? 'bg-purple-100 text-purple-600' :
-                                                        'bg-blue-100 text-blue-600'
+                                                u.role === 'TEACHER' ? 'bg-purple-100 text-purple-600' :
+                                                    'bg-blue-100 text-blue-600'
                                                 }`}>
                                                 {u.role}
                                             </span>

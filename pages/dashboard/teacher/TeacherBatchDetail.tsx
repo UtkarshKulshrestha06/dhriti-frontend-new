@@ -384,76 +384,80 @@ const TeacherBatchDetail: React.FC = () => {
                 {sortedAnnouncements.length > 0 ? (
                   <div className="space-y-6">
                     {sortedAnnouncements.map((ann) => (
-                      <div key={ann.id} className={`p-6 rounded-3xl border transition-all ${ann.isImportant ? 'bg-red-50/30 border-red-100' : 'bg-white border-gray-100 hover:shadow-md'}`}>
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${ann.isImportant ? 'bg-red-500 animate-pulse' : 'bg-ocean-500'}`}></div>
-                            <h4 className="font-bold text-lg text-slate-900 leading-snug">
-                              {ann.title}
-                            </h4>
-                            {ann.isImportant && (
-                              <span className="bg-red-100 text-red-600 text-[10px] font-black uppercase px-2 py-0.5 rounded border border-red-200 tracking-wide">
-                                Urgent
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex gap-2 items-center">
-                            <span className="text-xs font-bold text-gray-400 bg-white border border-gray-100 px-3 py-1.5 rounded-lg shadow-sm">
-                              {ann.date}
-                            </span>
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => handleEditClick(ann)}
-                                className="p-1.5 hover:bg-gray-100 text-gray-400 hover:text-ocean-600 rounded-lg transition-colors"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => setShowDeleteConfirm(ann.id === showDeleteConfirm ? null : ann.id)}
-                                className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+                      {
+                        sortedAnnouncements.map((ann) => (
+                          <div key={ann.id} className={`p-6 rounded-2xl border transition-all ${ann.isImportant ? 'bg-red-50/50 border-red-100' : 'bg-white border-gray-100 hover:border-gray-200 shadow-sm'}`}>
+                            {/* Header: Title & Urgent Badge */}
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex items-center gap-3">
+                                <h4 className={`font-extrabold text-lg leading-snug ${ann.isImportant ? 'text-red-700' : 'text-slate-800'}`}>
+                                  {ann.title}
+                                </h4>
+                                {ann.isImportant && (
+                                  <span className="bg-red-100/80 text-red-600 text-[10px] font-black uppercase px-2 py-0.5 rounded border border-red-200 tracking-wide">
+                                    Urgent
+                                  </span>
+                                )}
+                              </div>
 
-                        {showDeleteConfirm === ann.id && (
-                          <div className="bg-red-50 p-3 rounded-xl flex items-center justify-between mb-4 animate-in fade-in zoom-in duration-200 border border-red-100">
-                            <span className="text-xs text-red-700 font-bold">Delete this post?</span>
-                            <div className="flex gap-2">
-                              <button onClick={() => setShowDeleteConfirm(null)} className="text-xs font-bold text-gray-500 hover:underline">Cancel</button>
-                              <button onClick={() => handleDeleteAnnouncement(ann.id)} className="text-xs font-bold text-red-600 bg-white px-3 py-1.5 rounded-lg shadow-sm hover:shadow">Confirm</button>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="pl-6 border-l-2 border-gray-200 ml-1.5 mb-5">
-                          <div className="text-gray-700 text-base leading-relaxed">
-                            <MarkdownText text={ann.message} />
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs pl-6 ml-1.5 pt-4 border-t border-dashed border-gray-200">
-                          <div className="flex items-center gap-6 text-gray-500 font-bold">
-                            <span className="flex items-center gap-2 text-ocean-700 bg-ocean-50 px-3 py-1.5 rounded-lg">
-                              <User className="w-3.5 h-3.5" />
-                              <span className="uppercase tracking-wide">{ann.authorName || ann.author || 'Admin'}</span>
-                            </span>
-                            <span className="flex items-center gap-2 font-medium bg-gray-50 px-3 py-1.5 rounded-lg"><Clock className="w-3.5 h-3.5" /> {ann.time}</span>
-                          </div>
-                          {ann.tags && (
-                            <div className="flex gap-2">
-                              {ann.tags.map(tag => (
-                                <span key={tag} className="flex items-center gap-0.5 text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded font-bold uppercase tracking-wide">
-                                  <Hash className="w-3 h-3" /> {tag}
+                              {/* Top Right: Date & Actions */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-gray-400">
+                                  {ann.date}
                                 </span>
-                              ))}
+                                <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button onClick={() => handleEditClick(ann)} className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-ocean-600"><Edit className="w-3.5 h-3.5" /></button>
+                                  <button onClick={() => setShowDeleteConfirm(ann.id === showDeleteConfirm ? null : ann.id)} className="p-1 hover:bg-red-100 rounded text-gray-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+                                </div>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+
+                            {/* Confirmation for Delete */}
+                            {showDeleteConfirm === ann.id && (
+                              <div className="bg-red-50 p-3 rounded-xl flex items-center justify-between mb-4 border border-red-100">
+                                <span className="text-xs text-red-700 font-bold">Delete this post?</span>
+                                <div className="flex gap-2">
+                                  <button onClick={() => setShowDeleteConfirm(null)} className="text-xs font-bold text-gray-500 hover:underline">Cancel</button>
+                                  <button onClick={() => handleDeleteAnnouncement(ann.id)} className="text-xs font-bold text-red-600 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-red-100">Confirm</button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Message Body */}
+                            <div className="mb-6 text-gray-600 text-sm leading-relaxed font-medium">
+                              <div className="pl-1"><MarkdownText text={ann.message} /></div>
+                            </div>
+
+                            {/* Footer: Author & Meta */}
+                            <div className="flex items-center justify-between pt-4 border-t border-dashed border-gray-200/60">
+                              <div className="flex items-center gap-4">
+                                {/* Author Pill - Matches Target Design */}
+                                <div className="flex items-center gap-2 bg-blue-50/80 border border-blue-100 px-3 py-1.5 rounded-lg text-blue-700">
+                                  <User className="w-3.5 h-3.5" />
+                                  <span className="text-[10px] font-extrabold uppercase tracking-wider">{ann.authorName || 'ADMIN'}</span>
+                                </div>
+
+                                {/* Time */}
+                                <div className="flex items-center gap-1.5 text-gray-400 text-xs font-bold">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>{ann.time}</span>
+                                </div>
+                              </div>
+
+                              {/* Tags */}
+                              {ann.tags && ann.tags.length > 0 && (
+                                <div className="flex gap-1.5">
+                                  {ann.tags.map(tag => (
+                                    <span key={tag} className="text-[9px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md font-bold uppercase tracking-wide border border-slate-200">
+                                      #{tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      }
                   </div>
                 ) : (
                   <div className="text-center py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
